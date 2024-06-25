@@ -1,0 +1,3 @@
+[submodule "snx-v3-market-template/lib/forge-std"]
+	path = snx-v3-market-template/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
