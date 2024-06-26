@@ -1,0 +1,161 @@
+name = "sample-market"
+version = "0.1"
+description = "SNX sample market"
+
+[var.coreSettings]
+owner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+pool_id = "1"
+account_id = "1"
+collateral_price = "<%= parseEther('5') %>"
+
+[clone.synthetix]
+source = "synthetix:latest"
+owner = "<%= settings.owner %>"
+
+[clone.collateralToken]
+source = "mintable-token"
+options.salt = "<%= settings.salt %>"
+
+# Register oracle manager node for collateral token
+[invoke.registerCollateralPriceNode]
+target = ["synthetix.oracle_manager.Proxy"]
+func = "registerNode"
+args = [
+    8, # Type for Chainlink aggregator
+    "<%= defaultAbiCoder.encode(['int256'], [settings.collateral_price]) %>",
+    [],
+]
+extra.tkn_oracle_id.event = "NodeRegistered"
+extra.tkn_oracle_id.arg = 0
+
+# Configure collateral token as collateral for core
+[invoke.configureTknCollateral]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "configureCollateral"
+args = [
+  { tokenAddress = "<%= imports.collateralToken.contracts.MintableToken.address %>", oracleNodeId = "<%= extras.tkn_oracle_id %>", issuanceRatioD18 = "<%= parseEther('2') %>", liquidationRatioD18 = "<%= parseEther('1.5') %>", liquidationRewardD18 = "<%= parseEther('1') %>", minDelegationD18 = "<%= parseEther('1') %>", depositingEnabled = true }
+]
+
+# -----Create Account & delegated collateral to created Pool-----
+[invoke.allowAllRegisterMarket]
+target = ["synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('registerMarket') %>", true]
+
+[invoke.allowAllCreatePool]
+target = ["synthetix.CoreProxy"]
+fromCall.func = "owner"
+func = "setFeatureFlagAllowAll"
+args = ["<%= formatBytes32String('createPool') %>", true]
+
+# Create pool
+[invoke.createPool]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "createPool"
+args = [
+    "<%= settings.pool_id %>",
+    "<%= settings.owner %>"
+]
+
+# Set pool as preferred
+[invoke.setPreferredPool]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "setPreferredPool"
+args = [
+    "<%= settings.pool_id %>",
+]
+depends=["invoke.createPool"]
+
+# User receives collateral token
+[invoke.mintCollateral]
+target = ["collateralToken.MintableToken"]
+func = "mint"
+from="<%= settings.owner %>"
+args = [
+    "<%= parseEther('100000000') %>",
+    "<%= settings.owner %>"
+]
+
+# User creates account
+[invoke.createAccount]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "createAccount(uint128)"
+args = ["<%= settings.account_id %>"]
+extra.createdAccountId.event = "AccountCreated"
+extra.createdAccountId.arg = 0
+
+# User approves transfer of collateral
+[invoke.approveDeposit]
+target = ["collateralToken.MintableToken"]
+from = "<%= settings.owner %>"
+func = "approve"
+args = [
+    "<%= imports.synthetix.contracts.CoreProxy.address %>",
+    "<%= parseEther('100000000') %>",
+]
+depends=["invoke.mintCollateral"]
+
+# User deposits collateral token
+[invoke.depositCollateral]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "deposit"
+args = [
+    "<%= settings.account_id %>",
+    "<%= imports.collateralToken.contracts.MintableToken.address %>",
+    "<%= parseEther('100000000') %>",
+]
+depends=["invoke.createAccount", "invoke.approveDeposit"]
+
+# User delegates to pool
+[invoke.delegateCollateral]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "delegateCollateral"
+args = [
+    "<%= settings.account_id %>",
+    "<%= settings.pool_id %>",
+    "<%= imports.collateralToken.contracts.MintableToken.address %>",
+    "<%= parseEther('100000000') %>",
+    "<%= parseEther('1') %>"
+]
+depends=["invoke.depositCollateral"]
+
+[invoke.setMinimumLiquidityRatio]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "setMinLiquidityRatio(uint256)"
+args = ["<%= parseEther('2') %>"]
+# -----End of Create Account & delegated collateral to created Pool-----
+
+# -----Setup Market-----
+[deploy.SampleMarket]
+artifact = "SampleMarket"
+args = [
+  "<%= imports.synthetix.contracts.CoreProxy.address %>"
+]
+
+[invoke.initializeMarket]
+target = ["SampleMarket"]
+func = "initialize"
+depends=["deploy.SampleMarket", "invoke.allowAllRegisterMarket"]
+extra.sample_market_id.event = "MarketRegistered"
+extra.sample_market_id.arg = 0
+
+# delegate from core system preferred pool to new market
+[invoke.setPoolConfiguration]
+target = ["synthetix.CoreProxy"]
+from = "<%= settings.owner %>"
+func = "setPoolConfiguration"
+args = [
+    "<%= settings.pool_id %>",
+    [
+        { marketId = "<%= extras.sample_market_id %>", weightD18 = "1", maxDebtShareValueD18 = "<%= parseEther('2') %>" },
+    ]
+]
+depends=["invoke.createPool", "invoke.initializeMarket"]

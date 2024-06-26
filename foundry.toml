@@ -1,0 +1,11 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = [
+    "@synthetixio/main=node_modules/@synthetixio/main",
+    "@synthetixio/core-contracts=node_modules/@synthetixio/core-contracts",
+    "@synthetixio/oracle-manager=node_modules/@synthetixio/oracle-manager",
+]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

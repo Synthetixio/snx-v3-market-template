@@ -1,0 +1,35 @@
+{
+  "name": "@synthetixio/snx-v3-market-template",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "index.js",
+  "files": [
+    "src",
+    "package.json",
+    "README.md"
+  ],
+  "repository": "Synthetixio/snx-v3-market-template",
+  "author": "Synthetix",
+  "license": "MIT",
+  "scripts": {
+    "build": "CANNON_REGISTRY_PRIORITY=local cannon build",
+    "forge-test": "forge test -vvvvv",
+    "forge-coverage": "forge coverage --report lcov"
+  },
+  "devDependencies": {
+    "@usecannon/cli": "2.15.2",
+    "forge-std": "github:foundry-rs/forge-std#master"
+  },
+  "depcheck": {
+    "ignoreMatches": [
+      "forge-std"
+    ]
+  },
+  "dependencies": {
+    "@synthetixio/core-contracts": "^3.3.19",
+    "@synthetixio/main": "^3.3.19",
+    "@synthetixio/oracle-manager": "^3.3.19"
+  }
+}
