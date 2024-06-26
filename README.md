@@ -1,66 +1,35 @@
-## Foundry
+## SNX v3 Market Template
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This template uses [Cannon](https://usecannon.com) and [Forge](https://book.getfoundry.sh/) to bootstrap a Synthetix v3 market.
 
-Foundry consists of:
+### Prerequisites
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- Install cannon: `npm i -g @usecannon/cli`
+- Install and run `yarn`
+- Run `npx cannon plugin add cannon-plugin-router` to install router.
 
-## Documentation
+### Get Started
 
-https://book.getfoundry.sh/
+- Fork this repo.
+- Rename `SampleMarket` to your market name.
+- Rename `cannonfile.toml` package name.
+- Run `forge build` to build the package.
+- Run `cannon build` to bootstrap and environment with Synthetix deployed and market registered. **Note: Use `--keep-alive` option to interact with built package**
 
-## Usage
+### Bootstrapped environment
 
-### Build
+When you run cannon build, the following steps are executes for you to setup your market properly with the Synthetix v3 core system.
 
-```shell
-$ forge build
-```
+- Clone the latest release of Synthetix v3.
+- Clone a mintable ERC-20 to use as collateral.
+- Register a new oracle with a fixed price for collateral.
+- Configure collateral on the core system.
+- Create a new pool (which will be used to delegate collateral to the sample market).
+- Create a new user account and mint collateral to deposit.
+- Deposit into core system and delegate to the created pool.
+- Deploy and initialize the SampleMarket contract.
+- Delegate all collateral in pool to the SampleMarket.
 
-### Test
+### Core System Interactions
 
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+![alt text](https://github.com/Synthetixio/snx-v3-market-template/blob/main/core-market.png)
